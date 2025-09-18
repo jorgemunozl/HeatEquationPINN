@@ -1,31 +1,49 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Dirichlet Conditions.
 
 
-def function_to_optimize(x): #It is important that this function recieve a tensor.
-    return (x - 3)**2
+"""
+def residual_heat_equation(x,t):
+    return
+
+def boundary_condition(x,t):
+    return
+
+def initial_condition(x):
+    return np.arctan(x)*np.sin(x)
+"""
+
+
+def function_to_optimize(x):
+    return (x+3)**2-10*x + np.sin(x)
 
 
 class NeuralNetwork(nn.Module):
     def __init__(self):
         super(NeuralNetwork, self).__init__()
         self.layers = nn.Sequential(
-            nn.Linear(1,20),
+            nn.Linear(1, 40),
             nn.Tanh(),
-            nn.Linear(20,1)
+            nn.Linear(40, 80),
+            nn.Tanh(),
+            nn.Linear(80, 1)
         )
 
     def forward(self, x):
         return self.layers(x)
 
+
 model = NeuralNetwork()
 criterion = nn.MSELoss()
-optimizer = optim.SGD(model.parameters(), lr = 0.01)
-epochs = 100
+optimizer = optim.SGD(model.parameters(), lr=0.001)
+epochs = 10000
 batch_size = 10
-x = torch.linspace(-10,10,100).unsqueeze(1)
-x = (x - x.min()) / (x.max() - x.min())  # Normalize to [0,1]
+x = torch.linspace(-10, 10, 100).unsqueeze(1)
 y = function_to_optimize(x)
 
 for epoch in range(epochs):
@@ -47,24 +65,10 @@ for epoch in range(epochs):
 with torch.no_grad():
     predictions = model(x)
     print("Final MSE:", criterion(predictions, y).item())
-
-
-import matplotlib.pyplot as plt
-
-with torch.no_grad():
-    predictions = model(x)
-    print("Final MSE:", criterion(predictions, y).item())
     plt.plot(x.numpy(), y.numpy(), label="True")
     plt.plot(x.numpy(), predictions.numpy(), label="Predicted")
     plt.legend()
     plt.xlabel("x (normalized)")
     plt.ylabel("y")
     plt.title("Model Predictions vs True Values")
-    plt.savefig( "model_predictions.png")
-
-"""
-with torch.no_grad():
-    preds = torch.argmax(model(x), dim=1)
-    acc = (preds == y).float().mean()
-    print("Final accuracy")
-"""
+    plt.savefig("model_predictions.png")
