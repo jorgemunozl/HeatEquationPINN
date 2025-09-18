@@ -1,34 +1,45 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import matplotlib.pyplot as plt
 
 
-def function_to_optimize(x):
+def function_to_optimize(x): #It is important that this function recieve a tensor.
     return (x - 3) ** 2
 
 
 class NeuralNetwork(nn.Module):
     def __init__(self):
-        super(NeuralNetwork,self).__init__()
-        self.fc1= nn.Linear(10,10)
-        self.fc2= nn.Linear(10,20)
-        self.fc3= nn.Linear(20,1)
+        super(NeuralNetwork, self).__init__()
+        self.layers = nn.Sequential(
+            nn.Linear(1,20),
+            nn.ReLU(),
+            nn.Linear(20,20),
+            nn.Linear(20,1)
+        )
 
-    def forward(self,x):
-        x= nn.ReLU()(self.fc1(x))
-        x= nn.ReLU()(self.fc2(x))
-        x= self.fc3(x)
-        return x
+    def forward(self, x):
+        return self.layers(x)
 
+model = NeuralNetwork()
+criterion = nn.MSELoss()
+optimizer = optim.SGD(model.parameters(), lr = 0.1)
+epochs = 10000
+x = torch.linspace(-10,10,100)
+y = function_to_optimize(x)
 
-def main():
-    x = torch.linspace(-10, 10, 100)
-    y = function_to_optimize(x)
-        
+for epoch in range(epochs):
     
-    plt.plot(x.numpy(), y.numpy())
-    plt.xlabel("x")
-    plt.ylabel("f(x)")
-    plt.grid()
-    plt.show()
+    outputs = model(x.unsqueeze(1))
+    loss = criterion(outputs, y.unsqueeze(1))
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+    if (epoch+1) % 20 == 0:
+        print("loss:",loss.item())
+
+
+with torch.no_grad():
+    preds = torch.argmax(model(x), dim=1)
+    acc = (preds == y).float().mean()
+    print("Final accuracy")
