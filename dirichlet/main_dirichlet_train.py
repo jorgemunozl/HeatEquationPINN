@@ -44,7 +44,8 @@ optimizer = optim.SGD(model.parameters(), lr=0.001)
 epochs = 10000
 batch_size = 10
 x = torch.linspace(-10, 10, 100).unsqueeze(1)
-y = function_to_optimize(x)
+# Ensure inputs/targets are float tensors (models expect float32)
+y = function_to_optimize(x).float()
 
 for epoch in range(epochs):
     permutation = torch.randperm(x.size(0))
@@ -61,6 +62,15 @@ for epoch in range(epochs):
     if (epoch+1) % 20 == 0:
         print(f"Epoch {epoch+1}, Avg Loss: {epoch_loss/x.size(0):.4f}")
 
+
+# Save model and optimizer state after training
+save_path = "trained_model.pth"
+torch.save({
+    'model_state_dict': model.state_dict(),
+    'optimizer_state_dict': optimizer.state_dict(),
+    'epochs': epochs,
+}, save_path)
+print(f"Saved trained model and optimizer state to {save_path}")
 
 with torch.no_grad():
     predictions = model(x)
