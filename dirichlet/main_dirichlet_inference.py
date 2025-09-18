@@ -4,19 +4,20 @@ import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Dirichlet Conditions.
+# We need to calculate a first partial derivative
+# and then a second partial derivative over x
 
 
-"""
-def residual_heat_equation(x,t):
+def residual_heat_equation(x, t):
+    return 
+
+
+def boundary_condition(x, t):
     return
 
-def boundary_condition(x,t):
-    return
 
 def initial_condition(x):
-    return np.arctan(x)*np.sin(x)
-"""
+    return np.arctan(0.1*x)*np.sin(x)
 
 
 def function_to_optimize(x):

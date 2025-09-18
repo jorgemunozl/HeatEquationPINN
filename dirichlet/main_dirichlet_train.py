@@ -6,21 +6,26 @@ import matplotlib.pyplot as plt
 
 # Dirichlet Conditions.
 
+N_bc = 100
+N_ic = 50
+N_pde = 50
+L = 1
 
-"""
-def residual_heat_equation(x,t):
-    return
+# Four Loss functions
 
-def boundary_condition(x,t):
-    return
+
+def residual_heat_equation(x, t):
+    pass
+    # Here is the question
+    # ut-alpha*uxx
+
+
+def boundary_condition(t):
+    return model(0, t) # and model(1,t) I guess that we can create two loss here.
+
 
 def initial_condition(x):
-    return np.arctan(x)*np.sin(x)
-"""
-
-
-def function_to_optimize(x):
-    return (x+3)**2-10*x + np.sin(x)
+    return (x-x**2)**2*10
 
 
 class NeuralNetwork(nn.Module):
@@ -39,13 +44,12 @@ class NeuralNetwork(nn.Module):
 
 
 model = NeuralNetwork()
-criterion = nn.MSELoss()
-optimizer = optim.SGD(model.parameters(), lr=0.001)
+criterion = nn.MSELoss() # I need to tweak this
+optimizer = optim.SGD(model.parameters(), lr=0.001) # 
 epochs = 10000
 batch_size = 10
 x = torch.linspace(-10, 10, 100).unsqueeze(1)
-# Ensure inputs/targets are float tensors (models expect float32)
-y = function_to_optimize(x).float()
+y = initial_condition(x).float()
 
 for epoch in range(epochs):
     permutation = torch.randperm(x.size(0))
@@ -63,7 +67,6 @@ for epoch in range(epochs):
         print(f"Epoch {epoch+1}, Avg Loss: {epoch_loss/x.size(0):.4f}")
 
 
-# Save model and optimizer state after training
 save_path = "trained_model.pth"
 torch.save({
     'model_state_dict': model.state_dict(),
