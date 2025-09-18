@@ -2,15 +2,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-L = 20/3
+L = 4*np.pi
 
 
 def function_to_optimize(x):
-    return (3*(x**2)-8*x-16)*(np.exp(-0.5*x))
+    return np.arctan(0.1*x)*np.sin(x)
 
 
 x = np.linspace(0, L, 100)
 y = function_to_optimize(x)
 
 plt.plot(x, y)
-plt.savefig("dirichlet_analytic/analitic.png")
+plt.savefig("neumann_analytic/analitic.png")
