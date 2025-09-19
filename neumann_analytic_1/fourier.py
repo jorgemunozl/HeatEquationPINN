@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
-alpha = 0.1
+
+alpha = 0.001
 
 
 def fourier_series(n):
@@ -9,11 +11,13 @@ def fourier_series(n):
     return -480/(np.pi**4*(n**4))
 
 
-def heat_function(x, t):
+n_f = 40
+
+
+def heat_function(x, t: int):
     a_0 = 1/3
-    n = 40
     sum = 0
-    for i in range(2, n):
+    for i in range(1, n_f):
         exponential = np.exp(-1*alpha*(2*i*np.pi)**2*t)
         sum += fourier_series(2*i)*np.cos(np.pi*2*i*x)*exponential
     return a_0 + sum
@@ -23,16 +27,30 @@ def function(x):
     return 10*(x-x**2)**2
 
 
-points = 100
+points = 1000
 L = 1.0
 x = np.linspace(0, L, points)
 y = function(x)
+output_dir = "neumann_analytic_1/heat"
+os.makedirs(output_dir, exist_ok=True)
 
-plt.plot(x, y)
-plt.savefig("neumann_analytic/analitic.png")
 
-t = np.zeros(points)
-y = heat_function(x, t)
+plt.title(r"Heat Equation, $\alpha =10^{-3}$, n=40", fontsize=16)
+plt.xlabel(r"$x$", fontsize=16)
+plt.ylabel(r"Temperature, $u(x,t)$", fontsize=16)
 
-plt.plot(x, y)
-plt.savefig("neumann_analytic/heat.png")
+y = heat_function(x, 0)
+
+plt.plot(x, y, label=r'$u(x,0)=10(x-x^{2})^{2}$')
+
+for i in range(10, 80, 10):
+    y_t = heat_function(x, i)
+    plt.plot(x, y_t, label=f"t = {i}s")
+
+plt.legend(loc="upper left", fontsize=9)
+plt.grid(True)
+
+save_path = os.path.join(output_dir, "heat_equation.png")
+plt.savefig(save_path)
+print(f"Saved heat plot to {save_path}")
+print(f"alpha = {alpha}")
