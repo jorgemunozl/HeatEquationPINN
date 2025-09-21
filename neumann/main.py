@@ -2,8 +2,67 @@ import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
 import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
 
+fig = plt.figure()
 alpha = 0.1
+ax = fig.add_subplot(111, projection='3d')
+
+
+def plot2Heat(model):
+
+    sample = 100
+    x = np.linspace(0, 1, 100)
+    x_n = np.linspace(0, 1, 10)
+
+    with torch.no_grad():
+        x = torch.linspace(0, 1, sample).unsqueeze(1)
+        for i in x_n:
+            t = torch.ones((sample)).unsqueeze(1) * i
+            y = model(x, t)
+    #        plt.plot(x, y, label=f"t={i}", linewidth=1, color='blue')
+    #plt.legend()
+    #plt.show()
+
+
+def plot3Heat(model, t_max=1.0, nx=100, nt=100, save_path=None):
+    """
+    Create a 3D surface of u(x,t) from the PINN `model`.
+    - t_max: maximum time to plot (same units used in training)
+    - nx, nt: grid resolution for x and t
+    - save_path: if given, save figure to this path
+    """
+    # build numpy grids (2D arrays)
+    x_np = np.linspace(0, 1, nx)
+    t_np = np.linspace(0, t_max, nt)
+    X, T = np.meshgrid(x_np, t_np)  # shapes (nt, nx)
+
+    # make flattened torch inputs (N,1)
+    X_flat = torch.from_numpy(X.ravel()).float().unsqueeze(1)
+    T_flat = torch.from_numpy(T.ravel()).float().unsqueeze(1)
+
+    # evaluate model
+    model.eval()
+    with torch.no_grad():
+        Y_flat = model(X_flat, T_flat).cpu().numpy().ravel()
+
+    # reshape back to grid shape for plotting
+    Y = Y_flat.reshape(X.shape)
+
+    # clear/prepare axes
+    global ax
+    ax.clear()
+    surf = ax.plot_surface(X, T, Y, cmap='viridis', linewidth=0, antialiased=True)
+    ax.set_xlabel('x')
+    ax.set_ylabel('t')
+    ax.set_zlabel('u(x,t)')
+    ax.set_title(rf'PINN solution, $\alpha={alpha}$')
+    fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
+
+    if save_path:
+        plt.savefig(save_path, dpi=200, bbox_inches='tight')
+    else:
+        plt.show()
 
 
 def fourier_series(n):
@@ -128,28 +187,10 @@ def train_pinn(
         )
     return model
 
-model = train_pinn()
-#model = NeuralNetwork()
-#save_path = "neumann/parametersheat.pth"
-#loaded = torch.load(save_path)
-#model.load_state_dict(loaded["model_state_dict"])
+
+model = NeuralNetwork()
+save_path = "neumann/parametersheat.pth"
+loaded = torch.load(save_path)
+model.load_state_dict(loaded["model_state_dict"])
 model.eval()
-
-sample = 100
-x_n = np.linspace(0, 1, 10)
-y_n = initial_condition(x_n)
-
-# plt.plot(x_n, y_n, label="true", linewidth=4)
-
-
-with torch.no_grad():
-    x = torch.linspace(0, 1, sample).unsqueeze(1)
-    t = torch.zeros((sample)).unsqueeze(1)
-    y = model(x, t)
-    plt.plot(x, y)
-    for i in x_n:
-        t = torch.ones((sample)).unsqueeze(1) * i
-        y = model(x, t)
-        plt.plot(x, y, label=f"t{i}", linewidth=2)
-plt.legend()
-plt.show()
+plot3Heat(model)
