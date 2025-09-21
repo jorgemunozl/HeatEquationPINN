@@ -15,25 +15,64 @@ def plot2Heat(model):
     with torch.no_grad():
         x = torch.linspace(0, 1, sample).unsqueeze(1)
         for i in t_n:
-            fig = plt.figure()
             t = torch.ones((sample)).unsqueeze(1) * i
             y = model(x, t)
             y_ = heat_function(x_, i)
             plt.plot(x_, y_, label=f"True {i}")
-            plt.plot(x, y, label="Predicted", color='blue')
+            plt.plot(x, y, color='blue')
             plt.legend()
             plt.savefig(f"neumann/plots/image_{i}.png")
-            plt.close(fig)
+
+
+def plot_exact():
+    sample = 100
+    t = np.linspace(0, 1, 10)
+    for i in t:
+        x = np.linspace(0, 1, sample)
+        y = heat_function(x, i)
+        plt.plot(x, y, color='red')
+    plt.savefig("neumann/plots/exact.png")
+
+
+def plot_predict(model):
+    sample = 100
+    x_n = np.linspace(0, 1, 10)
+
+    with torch.no_grad():
+        x = torch.linspace(0, 1, sample).unsqueeze(1)
+        for i in x_n:
+            t = torch.ones((sample)).unsqueeze(1) * i
+            y = model(x, t)
+            plt.plot(x, y, linewidth=2, color='blue')
+    plt.savefig("neumann/plots/predicted.png")
+
+
+def plot_both(model):
+    sample = 10000
+    t = np.linspace(0, 1, 10)
+    for i in t:
+        x = np.linspace(0, 1, sample)
+        y = heat_function(x, i)
+        plt.plot(x, y, color='red')
+    with torch.no_grad():
+        x = torch.linspace(0, 1, sample).unsqueeze(1)
+        for i in t:
+            t = torch.ones((sample)).unsqueeze(1) * i
+            y = model(x, t)
+            plt.plot(x, y, linewidth=1, color='blue', label='predict')
+    plt.legend()
+    plt.show()
+    #plt.savefig("neumann/plots/both.png")
 
 
 """
 def plot3Heat(model, t_max=1.0, nx=100, nt=100, save_path=None):
-    
+
     Create a 3D surface of u(x,t) from the PINN `model`.
     - t_max: maximum time to plot (same units used in training)
     - nx, nt: grid resolution for x and t
     - save_path: if given, save figure to this path
-    
+
     # build numpy grids (2D arrays)
     x_np = np.linspace(0, 1, nx)
     t_np = np.linspace(0, t_max, nt)
@@ -76,7 +115,7 @@ def fourier_series(n):
 def heat_function(x, t: int):
     a_0 = 1/3
     sum = 0
-    for i in range(1, 40):
+    for i in range(1, 20):
         exponential = np.exp(-1*alpha*(2*i*np.pi)**2*t)
         sum += fourier_series(2*i)*np.cos(np.pi*2*i*x)*exponential
     return a_0 + sum
@@ -196,4 +235,4 @@ save_path = "parameter_colab_tpu.pth"
 loaded = torch.load(save_path)
 model.load_state_dict(loaded["model_state_dict"])
 model.eval()
-plot2Heat(model)
+plot_both(model)
