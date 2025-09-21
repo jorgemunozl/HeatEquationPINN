@@ -3,6 +3,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 LAMBDA = 0.5
 
 
@@ -55,7 +56,7 @@ def train_pinn(
 
     model = Net()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    x_col = torch.empty(num_collocation, 1).uniform_(-2.0, 2.0)
+    x_col = torch.empty(num_collocation, 1).uniform_(-100.0, 100.0)
     x_ic = torch.tensor([2.0], requires_grad=True)
     y_ic_target = torch.tensor([3.0])
     x_ic1 = torch.tensor([3.0], requires_grad=True)
@@ -81,29 +82,28 @@ def train_pinn(
 
         if _ % 100 == 0:
             print(loss)
-    save_path = "mas/parameters.pth"
-    torch.save({
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-        'epochs': num_epochs,
-    }, save_path)
+        save_path = "mas/parameters.pth"
+        torch.save({
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'epochs': num_epochs,
+        }, save_path)
 
     return model
 
 
-if __name__ == "__main6__":
+if __name__ == "__main__":
 
     loaded = torch.load("mas/parameters.pth")
     model = Net()
     model.load_state_dict(loaded['model_state_dict'])
     model.eval()
-    frontier = 6
+    frontier = 100
     x = torch.linspace(-1*frontier, frontier, 1000).unsqueeze(1)
     y = model(x)
-    print("a")
     x_n = x.detach().numpy().squeeze()
     y_n = y.detach().numpy().squeeze()
     plt.plot(x_n, y_n)
     y = exact(x_n)
     plt.plot(x_n, y)
-    plt.show()
+    plt.savefig("mas/plot2.png")

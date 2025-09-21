@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 
-alpha = 0.001
+alpha = 0.1
 
 
 def fourier_series(n):
@@ -43,7 +43,9 @@ y = heat_function(x, 0)
 
 plt.plot(x, y, label=r'$u(x,0)=10(x-x^{2})^{2}$')
 
-for i in range(10, 80, 10):
+ts = np.linspace(0, 1, 15)
+
+for i in ts:
     y_t = heat_function(x, i)
     plt.plot(x, y_t, label=f"t = {i}s")
 
@@ -51,6 +53,7 @@ plt.legend(loc="upper left", fontsize=9)
 plt.grid(True)
 
 save_path = os.path.join(output_dir, "heat_equation.png")
-plt.savefig(save_path)
+plt.show()
+#plt.savefig(save_path)
 print(f"Saved heat plot to {save_path}")
 print(f"alpha = {alpha}")
