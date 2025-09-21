@@ -2,36 +2,38 @@ import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
 
-fig = plt.figure()
 alpha = 0.1
-ax = fig.add_subplot(111, projection='3d')
 
 
 def plot2Heat(model):
 
     sample = 100
-    x = np.linspace(0, 1, 100)
-    x_n = np.linspace(0, 1, 10)
+    t_n = np.linspace(0, 1, 10)
+    x_ = np.linspace(0, 1, sample)
 
     with torch.no_grad():
         x = torch.linspace(0, 1, sample).unsqueeze(1)
-        for i in x_n:
+        for i in t_n:
+            fig = plt.figure()
             t = torch.ones((sample)).unsqueeze(1) * i
             y = model(x, t)
-    #        plt.plot(x, y, label=f"t={i}", linewidth=1, color='blue')
-    #plt.legend()
-    #plt.show()
+            y_ = heat_function(x_, i)
+            plt.plot(x_, y_, label=f"True {i}")
+            plt.plot(x, y, label="Predicted", color='blue')
+            plt.legend()
+            plt.savefig(f"neumann/plots/image_{i}.png")
+            plt.close(fig)
 
 
+"""
 def plot3Heat(model, t_max=1.0, nx=100, nt=100, save_path=None):
-    """
+    
     Create a 3D surface of u(x,t) from the PINN `model`.
     - t_max: maximum time to plot (same units used in training)
     - nx, nt: grid resolution for x and t
     - save_path: if given, save figure to this path
-    """
+    
     # build numpy grids (2D arrays)
     x_np = np.linspace(0, 1, nx)
     t_np = np.linspace(0, t_max, nt)
@@ -63,6 +65,7 @@ def plot3Heat(model, t_max=1.0, nx=100, nt=100, save_path=None):
         plt.savefig(save_path, dpi=200, bbox_inches='tight')
     else:
         plt.show()
+"""
 
 
 def fourier_series(n):
@@ -189,8 +192,8 @@ def train_pinn(
 
 
 model = NeuralNetwork()
-save_path = "neumann/parametersheat.pth"
+save_path = "parameter_colab_tpu.pth"
 loaded = torch.load(save_path)
 model.load_state_dict(loaded["model_state_dict"])
 model.eval()
-plot3Heat(model)
+plot2Heat(model)
