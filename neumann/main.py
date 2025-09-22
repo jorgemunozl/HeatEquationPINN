@@ -230,9 +230,9 @@ def train_pinn(
     return model
 
 
-model = NeuralNetwork()
-save_path = "parameter_colab_tpu.pth"
-loaded = torch.load(save_path)
-model.load_state_dict(loaded["model_state_dict"])
-model.eval()
-plot_both(model)
+if __name__ == "main":
+    model = NeuralNetwork()
+    save_path = "parameter_colab_tpu.pth"
+    loaded = torch.load(save_path)
+    model.load_state_dict(loaded["model_state_dict"])
+    model.eval()
