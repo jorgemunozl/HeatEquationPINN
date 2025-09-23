@@ -26,12 +26,17 @@ def plot2Heat(model):
 
 def plot_exact():
     sample = 100
-    t = np.linspace(0, 1, 10)
+    t = np.linspace(0.1, 1, 9)
+    x = np.linspace(0, 1, sample)
+    y_ = heat_function(x, 0)
+    plt.plot(x, y_, color='red', label=r'$u(x,0)=10(x-x^{2})^{2}$')
     for i in t:
         x = np.linspace(0, 1, sample)
         y = heat_function(x, i)
-        plt.plot(x, y, color='red')
-    plt.savefig("neumann/plots/exact.png")
+        plt.plot(x, y, color='red')  # , label=f'{i.max():.2f}')
+    plt.title("Exact Solution")
+    plt.legend()
+    plt.savefig("neumann/plots/exact_plot.png")
 
 
 def plot_predict(model):
@@ -43,68 +48,33 @@ def plot_predict(model):
         for i in x_n:
             t = torch.ones((sample)).unsqueeze(1) * i
             y = model(x, t)
-            plt.plot(x, y, linewidth=2, color='blue')
+            plt.plot(x, y, color='blue')
+    plt.title('Model Predict')
     plt.savefig("neumann/plots/predicted.png")
 
 
 def plot_both(model):
     sample = 10000
     t = np.linspace(0, 1, 10)
-    for i in t:
+    x = np.linspace(0, 1, sample)
+    y = heat_function(x, 0)
+    plt.plot(x, y, color='red', label='Exact')
+
+    for i in t[1:]:
         x = np.linspace(0, 1, sample)
         y = heat_function(x, i)
-        plt.plot(x, y, color='red')
+        plt.plot(x, y, linewidth=1, color='red')
     with torch.no_grad():
         x = torch.linspace(0, 1, sample).unsqueeze(1)
-        for i in t:
+        t_ = torch.zeros((sample)).unsqueeze(1)
+        y = model(x, t_)
+        plt.plot(x, y, linewidth=1, color='blue', label='Predict')
+        for i in t[1:]:
             t = torch.ones((sample)).unsqueeze(1) * i
             y = model(x, t)
-            plt.plot(x, y, linewidth=1, color='blue', label='predict')
+            plt.plot(x, y, linewidth=1, color='blue')
     plt.legend()
-    plt.show()
-    #plt.savefig("neumann/plots/both.png")
-
-
-"""
-def plot3Heat(model, t_max=1.0, nx=100, nt=100, save_path=None):
-
-    Create a 3D surface of u(x,t) from the PINN `model`.
-    - t_max: maximum time to plot (same units used in training)
-    - nx, nt: grid resolution for x and t
-    - save_path: if given, save figure to this path
-
-    # build numpy grids (2D arrays)
-    x_np = np.linspace(0, 1, nx)
-    t_np = np.linspace(0, t_max, nt)
-    X, T = np.meshgrid(x_np, t_np)  # shapes (nt, nx)
-
-    # make flattened torch inputs (N,1)
-    X_flat = torch.from_numpy(X.ravel()).float().unsqueeze(1)
-    T_flat = torch.from_numpy(T.ravel()).float().unsqueeze(1)
-
-    # evaluate model
-    model.eval()
-    with torch.no_grad():
-        Y_flat = model(X_flat, T_flat).cpu().numpy().ravel()
-
-    # reshape back to grid shape for plotting
-    Y = Y_flat.reshape(X.shape)
-
-    # clear/prepare axes
-    global ax
-    ax.clear()
-    surf = ax.plot_surface(X, T, Y, cmap='viridis', linewidth=0, antialiased=True)
-    ax.set_xlabel('x')
-    ax.set_ylabel('t')
-    ax.set_zlabel('u(x,t)')
-    ax.set_title(rf'PINN solution, $\alpha={alpha}$')
-    fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
-
-    if save_path:
-        plt.savefig(save_path, dpi=200, bbox_inches='tight')
-    else:
-        plt.show()
-"""
+    plt.savefig("neumann/plots/both.png", dpi=500)
 
 
 def fourier_series(n):
@@ -230,9 +200,10 @@ def train_pinn(
     return model
 
 
-if __name__ == "main":
+if __name__ == "__main__":
     model = NeuralNetwork()
     save_path = "parameter_colab_tpu.pth"
     loaded = torch.load(save_path)
     model.load_state_dict(loaded["model_state_dict"])
     model.eval()
+    plot_both(model)
