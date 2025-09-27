@@ -1,127 +1,19 @@
 import torch
 import torch.nn as nn
-import matplotlib.pyplot as plt
-import numpy as np
-
-alpha = 0.1
-
-
-def plot2Heat(model):
-
-    sample = 100
-    t_n = np.linspace(0, 1, 10)
-    x_ = np.linspace(0, 1, sample)
-
-    with torch.no_grad():
-        x = torch.linspace(0, 1, sample).unsqueeze(1)
-        for i in t_n:
-            t = torch.ones((sample)).unsqueeze(1) * i
-            y = model(x, t)
-            y_ = heat_function(x_, i)
-            plt.plot(x_, y_, label=f"True {i}")
-            plt.plot(x, y, color='blue')
-            plt.legend()
-            plt.savefig(f"neumann/plots/image_{i}.png")
-
-
-def plot_exact():
-    sample = 100
-    t = np.linspace(0.1, 1, 9)
-    x = np.linspace(0, 1, sample)
-    y_ = heat_function(x, 0)
-    plt.plot(x, y_, color='red', label=r'$u(x,0)=10(x-x^{2})^{2}$')
-    for i in t:
-        x = np.linspace(0, 1, sample)
-        y = heat_function(x, i)
-        plt.plot(x, y, color='red')  # , label=f'{i.max():.2f}')
-    plt.title("Exact Solution")
-    plt.legend()
-    plt.savefig("neumann/plots/exact_plot.png")
-
-
-def plot_predict(model):
-    sample = 100
-    x_n = np.linspace(0, 1, 10)
-
-    with torch.no_grad():
-        x = torch.linspace(0, 1, sample).unsqueeze(1)
-        for i in x_n:
-            t = torch.ones((sample)).unsqueeze(1) * i
-            y = model(x, t)
-            plt.plot(x, y, color='blue')
-    plt.title('Model Predict')
-    plt.savefig("neumann/plots/predicted.png")
-
-
-def plot_both(model):
-    sample = 10000
-    t = np.linspace(0, 1, 10)
-    x = np.linspace(0, 1, sample)
-    y = heat_function(x, 0)
-    plt.plot(x, y, color='red', label='Exact')
-
-    for i in t[1:]:
-        x = np.linspace(0, 1, sample)
-        y = heat_function(x, i)
-        plt.plot(x, y, linewidth=1, color='red')
-    with torch.no_grad():
-        x = torch.linspace(0, 1, sample).unsqueeze(1)
-        t_ = torch.zeros((sample)).unsqueeze(1)
-        y = model(x, t_)
-        plt.plot(x, y, linewidth=1, color='blue', label='Predict')
-        for i in t[1:]:
-            t = torch.ones((sample)).unsqueeze(1) * i
-            y = model(x, t)
-            plt.plot(x, y, linewidth=1, color='blue')
-    plt.legend()
-    plt.savefig("neumann/plots/both.png", dpi=500)
-
-
-def fourier_series(n):
-    # n even
-    return -480/(np.pi**4*(n**4))
-
-
-def heat_function(x, t: int):
-    a_0 = 1/3
-    sum = 0
-    for i in range(1, 20):
-        exponential = np.exp(-1*alpha*(2*i*np.pi)**2*t)
-        sum += fourier_series(2*i)*np.cos(np.pi*2*i*x)*exponential
-    return a_0 + sum
-
-
-def compute_residual(model, x, t):
-    x = x.clone().detach().requires_grad_(True)
-    t = t.clone().detach().requires_grad_(True)
-
-    u = model(x, t)
-    ones = torch.ones_like(u)
-    d_t = torch.autograd.grad(
-        u, t, grad_outputs=ones, create_graph=True, retain_graph=True
-        )[0]
-    d_x = torch.autograd.grad(
-        u, x, grad_outputs=ones, create_graph=True, retain_graph=True
-    )[0]
-    d_xx = torch.autograd.grad(
-        d_x, x, grad_outputs=torch.ones_like(d_x), create_graph=True,
-        retain_graph=True
-    )[0]
-
-    return d_t - alpha*d_xx
-
-
-def initial_condition(x):
-    return 10*(x-x**2)**2
+from config import netConfig, pinnConfig
+from utils import compute_residual, initial_condition
 
 
 class NeuralNetwork(nn.Module):
     def __init__(self):
         super().__init__()
-        layer = [nn.Linear(2, 100), nn.Tanh()]
+        layer = [nn.Linear(netConfig().neuron_inputs,
+                           netConfig().neuron_hidden), nn.Tanh()]
         for i in range(8):
-            layer += [nn.Linear(100, 100), nn.Tanh()]
-        layer += [nn.Linear(100, 1), nn.Tanh()]
+            layer += [nn.Linear(netConfig().neuron_hidden,
+                                netConfig().neuron_hidden), nn.Tanh()]
+        layer += [nn.Linear(netConfig().neuron_hidden,
+                            netConfig().neuron_outputs), nn.Tanh()]
         self.net = nn.Sequential(*layer)
 
     def forward(self, x, t):
@@ -129,18 +21,16 @@ class NeuralNetwork(nn.Module):
         return self.net(inp)
 
 
-def train_pinn(
-        num_epochs=5000,
-        num_collocation_res=1000,
-        num_collocation_ic=500,
-        num_collocation_bc=600,
-        lr=1e-3,
-        lambda_residual=10.0,
-        lambda_ic=6.0,
-        lambda_bc=5.0
-):
+def train_pinn():
+
     model = NeuralNetwork()
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=netConfig().lr)
+    num_collocation_res = pinnConfig().num_collocation_res
+    num_collocation_ic = pinnConfig().num_collocation_ic
+    num_collocation_bc = pinnConfig().num_collocation_bc
+    lambda_residual = pinnConfig().num_collocation_bc
+    lambda_ic = pinnConfig().num_collocation_bc
+    lambda_bc = pinnConfig().lambda_bc
 
     # Residual Collocation
     x_col_res = torch.empty(num_collocation_res, 1).uniform_(0, 1)
@@ -160,7 +50,7 @@ def train_pinn(
     ux_0_bc = torch.zeros((num_collocation_bc, 1))
     ux_1_bc = torch.zeros((num_collocation_bc, 1))
 
-    for _ in range(num_epochs):
+    for _ in range(netConfig().epochs):
         optimizer.zero_grad()
 
         # Residual
@@ -193,7 +83,7 @@ def train_pinn(
 
         if _ % 200 == 0:
             print(loss)
-    save_path = "parametersheat.pth"
+    save_path = netConfig().save_path
     torch.save(
             {'model_state_dict': model.state_dict()}, save_path
         )
@@ -202,8 +92,6 @@ def train_pinn(
 
 if __name__ == "__main__":
     model = NeuralNetwork()
-    save_path = "parameter_colab_tpu.pth"
-    loaded = torch.load(save_path)
+    loaded = torch.load(netConfig().save_path)
     model.load_state_dict(loaded["model_state_dict"])
     model.eval()
-    plot_both(model)

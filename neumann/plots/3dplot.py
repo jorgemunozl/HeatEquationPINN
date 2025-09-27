@@ -1,3 +1,10 @@
+import numpy as np
+import torch
+import matplotlib.pyplot as plt
+
+fig , ax = plt.subplots(figsize=(8,4), )
+
+
 def plot3Heat(model, t_max=1.0, nx=100, nt=100, save_path=None):
     """
     Create a 3D surface of u(x,t) from the PINN `model`.
