@@ -59,7 +59,6 @@ def train_pinn(
     y_bc_target = torch.ones((1, 1), device=device)
 
     snapshots = []
-    snapshots_2 = []
 
     for epoch in range(num_epochs + 1):
         optimizer.zero_grad()
@@ -87,15 +86,17 @@ def train_pinn(
                 y_pred, x_plot,
                 grad_outputs=torch.ones_like(y_pred), create_graph=True
             )[0]
+            d2y_pred = torch.autograd.grad(
+                dy_pred, x_plot, grad_outputs=torch.ones_like(dy_pred),
+                create_graph=True
+            )[0]
             snapshots.append((epoch, x_plot.detach().numpy().squeeze(),
-                             y_pred.detach().numpy()))
-            snapshots_2.append(dy_pred.detach().numpy())
-
-    return model, snapshots, snapshots_2
+                             d2y_pred.detach().numpy()))
+    return model, snapshots
 
 
 if __name__ == "__main__":
-    model, snapshots, snapshots_2 = train_pinn()
+    model, snapshots = train_pinn()
 
     # Exact solution
     x_ref = snapshots[0][1]
@@ -111,16 +112,14 @@ if __name__ == "__main__":
     line_dy_pred, = ax.plot([], [], label='Pred_')
     line_dy_true, = ax.plot(x_ref, dy_true, label="True D")
     ax.set_xlim(-2, 2)
-    ax.set_ylim(0, 8)
+    ax.set_ylim(-8, 8)
     ax.set_xlabel("x")
     ax.set_ylabel("y(x)")
     ax.legend()
 
     def update(frame):
         epoch, x, y_pred = snapshots[frame]
-        dy_pred = snapshots_2[frame]
         line_pred.set_data(x, y_pred)
-        line_dy_pred.set_data(x, dy_pred)
         ax.set_title(f"PINN solution, epoch {epoch}")
         return line_pred,
 
