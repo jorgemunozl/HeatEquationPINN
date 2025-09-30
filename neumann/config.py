@@ -29,6 +29,10 @@ class netConfig(BaseModel):
         default=1e-3,
         description='Learning rate'
     )
+    step_snapshot: int = Field(
+        default=10,
+        description='Step'
+    )
 
 
 class plotConfig(BaseModel):
@@ -66,5 +70,13 @@ class pinnConfig(BaseModel):
     )
     lambda_bc: float = Field(
         default=10.0,
+        description=''
+    )
+    error_x_sample: int = Field(
+        default=100,
+        description=''
+    )
+    error_t_sample: int = Field(
+        default=100,
         description=''
     )
