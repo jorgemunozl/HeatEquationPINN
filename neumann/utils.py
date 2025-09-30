@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+from config import pinnConfig
 
 
 def plot2Heat(model):
@@ -18,6 +19,10 @@ def plot2Heat(model):
             plt.plot(x, y, color='blue')
             plt.legend()
             plt.savefig(f"neumann/plots/image_{round(i, 2)}.png")
+
+
+def error_fixed_t(y, y_hat):
+    return np.abs(y-y_hat)/np.abs(y)
 
 
 def plot_exact():
@@ -78,11 +83,11 @@ def fourier_series(n):
     return -480/(np.pi**4*(n**4))
 
 
-def heat_function(x, t: int):
+def heat_function(x, t):
     a_0 = 1/3
     sum = 0
     for i in range(1, 20):
-        exponential = np.exp(-1*alpha*(2*i*np.pi)**2*t)
+        exponential = np.exp(-1*pinnConfig().alpha*(2*i*np.pi)**2*t)
         sum += fourier_series(2*i)*np.cos(np.pi*2*i*x)*exponential
     return a_0 + sum
 
@@ -104,7 +109,7 @@ def compute_residual(model, x, t):
         retain_graph=True
     )[0]
 
-    return d_t - alpha*d_xx
+    return d_t - pinnConfig().alpha*d_xx
 
 
 def initial_condition(x):

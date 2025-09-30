@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
+import matplotlib.pyplot as plt
+import numpy as np
 from config import netConfig, pinnConfig
-from utils import compute_residual, initial_condition
+from utils import compute_residual, initial_condition, heat_function
 
 
 class NeuralNetwork(nn.Module):
@@ -9,7 +11,7 @@ class NeuralNetwork(nn.Module):
         super().__init__()
         layer = [nn.Linear(netConfig().neuron_inputs,
                            netConfig().neuron_hidden), nn.Tanh()]
-        for i in range(8):
+        for i in range(netConfig().hidden_layers_numbers):
             layer += [nn.Linear(netConfig().neuron_hidden,
                                 netConfig().neuron_hidden), nn.Tanh()]
         layer += [nn.Linear(netConfig().neuron_hidden,
@@ -50,6 +52,8 @@ def train_pinn():
     ux_0_bc = torch.zeros((num_collocation_bc, 1))
     ux_1_bc = torch.zeros((num_collocation_bc, 1))
 
+    snapshots = []
+
     for _ in range(netConfig().epochs):
         optimizer.zero_grad()
 
@@ -80,18 +84,30 @@ def train_pinn():
         loss = lambda_residual*loss_residual+lambda_ic*loss_ic+lambda_bc*loss_b
         loss.backward()
         optimizer.step()
-
-        if _ % 200 == 0:
-            print(loss)
+        
+        t_sample = np.linspace(0, 1, pinnConfig().error_t_sample)
+        
+        if _ % netConfig().step_snapshot == 0:
+            for t in t_sample:
+                with torch.no_grad():
+                    x_ = torch.linspace(0, 1, pinnConfig().error_x_sample) 
+                    t_ = torch.ones(pinnConfig().error_x_sample, 1) * t 
+                    y_predict = model(x_, t_)
+                y_exact = heat_function(x_.numpy(), t_sample)
+            error = np.mean(y_predict-y_exact)
+            snapshots.append((_, error))
     save_path = netConfig().save_path
     torch.save(
             {'model_state_dict': model.state_dict()}, save_path
         )
-    return model
+    return model, snapshots
 
 
 if __name__ == "__main__":
-    model = NeuralNetwork()
+    model, snapshots = train_pinn()
+    plt.plot(snapshots[0], snapshots[1])
+    plt.show()
+    """model = NeuralNetwork()
     loaded = torch.load(netConfig().save_path)
     model.load_state_dict(loaded["model_state_dict"])
-    model.eval()
+    model.eval()"""
