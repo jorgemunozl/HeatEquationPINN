@@ -4,11 +4,11 @@ from typing import Annotated
 
 class netConfig(BaseModel):
     save_path: str = Field(
-        default="exp/parameters.pth",
+        default="parameter_colab_tpu.pth",
         description="Parameter's path"
     )
     neuron_inputs: int = Field(
-        default=1,
+        default=2,
         description='Number of neurons'
     )
     neuron_hidden: int = Field(
@@ -19,7 +19,7 @@ class netConfig(BaseModel):
         default=8,
     )
     neuron_outputs: int = Field(
-        default=2
+        default=1
     )
     epochs: int = Field(
         default=1000,
@@ -73,7 +73,7 @@ class pinnConfig(BaseModel):
         description=''
     )
     error_x_sample: int = Field(
-        default=100,
+        default=10000,
         description=''
     )
     error_t_sample: int = Field(

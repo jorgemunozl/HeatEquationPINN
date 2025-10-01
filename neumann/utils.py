@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from config import pinnConfig
+import torch.nn.functional as F
 
 
 def plot2Heat(model):
@@ -21,8 +22,62 @@ def plot2Heat(model):
             plt.savefig(f"neumann/plots/image_{round(i, 2)}.png")
 
 
-def error_fixed_t(y, y_hat):
+def error_mape(y, y_hat):
     return np.abs(y-y_hat)/np.abs(y)
+
+
+def plot_error_MSE(model, t):
+    with torch.no_grad():
+        x_sample = torch.linspace(0, 1, pinnConfig().error_x_sample)
+        x_sample = x_sample.unsqueeze(1)
+        time_one = torch.ones((pinnConfig().error_x_sample, 1))
+        t_eval = time_one * t
+        y_predict = model(x_sample, t_eval)
+        y_true = heat_function(x_sample, t_eval)
+        error_mape_ = F.mse_loss(y_true, y_predict)
+    plt.plot(x_sample.numpy(), error_mape_, label="MAPE")
+    plt.plot(x_sample.numpy(), y_true, label="True")
+    plt.plot(x_sample.numpy(), y_predict.numpy(), label="Predicted")
+    plt.legend()
+    plt.show()
+    print(torch.mean(error_mape_)*100)
+    plt.savefig("neumann/error/erro.png")
+
+
+def error_time(model):
+    with torch.no_grad():
+        x_sample = torch.linspace(0, 1, pinnConfig().error_x_sample)
+        x_sample = x_sample.unsqueeze(1)
+        t_sample = torch.linspace(0, 1, pinnConfig().error_t_sample)
+        time_one = torch.ones((pinnConfig().error_x_sample, 1))
+        error_t = []
+        for i in t_sample:
+            t_eval = time_one * i
+            y_predict = model(x_sample, t_eval)
+            y_true = heat_function(x_sample.squeeze(), t_eval.squeeze())
+            error = error_mape(y_true, y_predict)
+            error = torch.mean(error)
+            error_t.append(error.numpy())
+    plt.plot(t_sample.numpy(), error_t)
+    plt.show()
+
+
+def plot_error_mape(model, t: float):
+    with torch.no_grad():
+        x_sample = torch.linspace(0, 1, pinnConfig().error_x_sample)
+        x_sample = x_sample.unsqueeze(1)
+        time_one = torch.ones((pinnConfig().error_x_sample, 1))
+        t_eval = time_one * t
+        y_predict = model(x_sample, t_eval)
+        y_true = heat_function(x_sample, t_eval)
+        error_mape_ = error_mape(y_true, y_predict)
+    plt.plot(x_sample.numpy(), error_mape_, label="MAPE")
+    plt.plot(x_sample.numpy(), y_true, label="True")
+    plt.plot(x_sample.numpy(), y_predict.numpy(), label="Predicted")
+    plt.legend()
+    plt.show()
+    print(torch.mean(error_mape_)*100)
+    plt.savefig("neumann/error/erro.png")
 
 
 def plot_exact():
@@ -110,6 +165,16 @@ def compute_residual(model, x, t):
     )[0]
 
     return d_t - pinnConfig().alpha*d_xx
+
+
+def plot_init():
+    x = np.linspace(0, 1, 100)
+    y = initial_condition(x)
+    y_ = heat_function(x, 0.0)
+    plt.plot(x, y_, label="Heat_0")
+    plt.plot(x, y, label="init")
+    plt.legend()
+    plt.show()
 
 
 def initial_condition(x):

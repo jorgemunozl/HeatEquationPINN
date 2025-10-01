@@ -1,9 +1,7 @@
 import torch
 import torch.nn as nn
-import matplotlib.pyplot as plt
-import numpy as np
 from config import netConfig, pinnConfig
-from utils import compute_residual, initial_condition, heat_function
+from utils import compute_residual, initial_condition, plot_init, plot_predict_true
 
 
 class NeuralNetwork(nn.Module):
@@ -92,7 +90,8 @@ def train_pinn():
 
 
 if __name__ == "__main__":
-    model = train_pinn()
+    model = NeuralNetwork()
     loaded = torch.load(netConfig().save_path)
     model.load_state_dict(loaded["model_state_dict"])
     model.eval()
+    plot_predict_true(model, 2)
