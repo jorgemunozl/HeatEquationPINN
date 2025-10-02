@@ -1,130 +1,97 @@
-import numpy as np
 import torch
 import torch.nn as nn
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-
-# Reproducibility
-torch.manual_seed(42)
-np.random.seed(42)
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from config import netConfig, pinnConfig
+from utils import compute_residual, initial_condition, plot_init, plot_predict_true
 
 
-class MLP(nn.Module):
-    def __init__(self, in_dim=1, hidden_dim=64, out_dim=1, num_hidden=3):
+class NeuralNetwork(nn.Module):
+    def __init__(self):
         super().__init__()
-        layers = [nn.Linear(in_dim, hidden_dim), nn.Tanh()]
-        for _ in range(num_hidden - 1):
-            layers += [nn.Linear(hidden_dim, hidden_dim), nn.Tanh()]
-        layers += [nn.Linear(hidden_dim, out_dim)]
-        self.net = nn.Sequential(*layers)
+        layer = [nn.Linear(netConfig().neuron_inputs,
+                           netConfig().neuron_hidden), nn.Tanh()]
+        for i in range(netConfig().hidden_layers_numbers):
+            layer += [nn.Linear(netConfig().neuron_hidden,
+                                netConfig().neuron_hidden), nn.Tanh()]
+        layer += [nn.Linear(netConfig().neuron_hidden,
+                            netConfig().neuron_outputs), nn.Tanh()]
+        self.net = nn.Sequential(*layer)
 
-    def forward(self, x):
-        return self.net(x)
-
-
-def compute_residual(model, x):
-    x.requires_grad_(True)
-    y = model(x)
-    dy_dx = torch.autograd.grad(
-        y, x, grad_outputs=torch.ones_like(y), create_graph=True,
-        retain_graph=True
-    )[0]
-    residual = dy_dx + y
-    return residual
+    def forward(self, x, t):
+        inp = torch.cat([x, t], dim=1)
+        return self.net(inp)
 
 
-@torch.no_grad()
-def exact_solution(x):
-    return torch.exp(-x)
+def train_pinn():
 
+    model = NeuralNetwork()
+    optimizer = torch.optim.Adam(model.parameters(), lr=netConfig().lr)
+    num_collocation_res = pinnConfig().num_collocation_res
+    num_collocation_ic = pinnConfig().num_collocation_ic
+    num_collocation_bc = pinnConfig().num_collocation_bc
+    lambda_residual = pinnConfig().num_collocation_bc
+    lambda_ic = pinnConfig().num_collocation_bc
+    lambda_bc = pinnConfig().lambda_bc
 
-def train_pinn(
-    num_epochs=5000,
-    num_collocation=256,
-    lr=1e-3,
-    lambda_residual=1.0,
-    lambda_bc=10.0,
-    snapshot_every=10,
-):
-    model = MLP().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    # Residual Collocation
+    x_col_res = torch.empty(num_collocation_res, 1).uniform_(0, 1)
+    t_col_res = torch.empty(num_collocation_res, 1).uniform_(0, 1)
 
-    # Collocation points in [0, 1]
-    x_col = torch.empty(num_collocation, 1).uniform_(-2, 2).to(device)
+    # Initial Condition Collocation
+    x_col_ic = torch.empty(num_collocation_ic, 1).uniform_(0, 1)
+    t_col_ic = torch.zeros((num_collocation_ic, 1))
 
-    # Boundary condition at x=0: y(0) = 1
-    x_bc = torch.zeros((1, 1), device=device)
-    y_bc_target = torch.ones((1, 1), device=device)
+    # Boundary Condition Collocation
+    t_x_bc = torch.empty(num_collocation_bc, 1).uniform_(0, 1)
+    x_bc = torch.zeros((num_collocation_bc, 1), requires_grad=True)
+    t_l_bc = torch.empty(num_collocation_bc, 1).uniform_(0, 1)
+    l_bc = torch.ones((num_collocation_bc, 1), requires_grad=True)
 
-    snapshots = []
+    # Neumann
+    ux_0_bc = torch.zeros((num_collocation_bc, 1))
+    ux_1_bc = torch.zeros((num_collocation_bc, 1))
 
-    for epoch in range(num_epochs + 1):
+    for _ in range(netConfig().epochs):
         optimizer.zero_grad()
 
-        # Residual loss over collocation points
-        residual = compute_residual(model, x_col)
-        loss_res = torch.mean(residual**2)
+        # Residual
+        residual = compute_residual(model, x_col_res, t_col_res)
+        loss_residual = torch.mean(residual**2)
 
-        # Boundary loss at x=0
-        y0 = model(x_bc)
-        loss_bc = torch.mean((y0 - y_bc_target) ** 2)
+        # Initial
+        model_ic = model(x_col_ic, t_col_ic)
+        loss_ic = torch.mean((model_ic-initial_condition(x_col_ic))**2)
 
-        loss = lambda_residual * loss_res + lambda_bc * loss_bc
+        # Boundary
+        u_0_bc = model(x_bc, t_x_bc)
+        du_0_bc = torch.autograd.grad(
+            u_0_bc, x_bc, grad_outputs=torch.ones_like(u_0_bc),
+            create_graph=True
+        )[0]
+
+        u_l_bc = model(l_bc, t_l_bc)
+        du_l_bc = torch.autograd.grad(
+            u_l_bc, l_bc, grad_outputs=torch.ones_like(u_l_bc),
+            create_graph=True
+        )[0]
+
+        loss_0_bc = torch.mean((du_0_bc-ux_0_bc)**2)
+        loss_1_bc = torch.mean((du_l_bc-ux_1_bc)**2)
+        loss_b = (loss_0_bc + loss_1_bc)
+        loss = lambda_residual*loss_residual+lambda_ic*loss_ic+lambda_bc*loss_b
         loss.backward()
         optimizer.step()
-
-        if epoch % 100 == 0:
-            print(f"epoch={epoch} loss={loss.item():.4e} res={loss_res.item():.4e} bc={loss_bc.item():.4e}")
-
-        if epoch % snapshot_every == 0:
-            x_plot = torch.linspace(-2, 2, 200, device=device).unsqueeze(1)
-            x_plot.requires_grad_(True)
-            y_pred = model(x_plot)
-            dy_pred = torch.autograd.grad(
-                y_pred, x_plot,
-                grad_outputs=torch.ones_like(y_pred), create_graph=True
-            )[0]
-            d2y_pred = torch.autograd.grad(
-                dy_pred, x_plot, grad_outputs=torch.ones_like(dy_pred),
-                create_graph=True
-            )[0]
-            snapshots.append((epoch, x_plot.detach().numpy().squeeze(),
-                             d2y_pred.detach().numpy()))
-    return model, snapshots
+        if _ % 200 == 0:
+            print(loss)
+    save_path = netConfig().save_path
+    torch.save(
+            {'model_state_dict': model.state_dict()}, save_path
+        )
+    return model
 
 
 if __name__ == "__main__":
-    model, snapshots = train_pinn()
-
-    # Exact solution
-    x_ref = snapshots[0][1]
-    y_true = np.exp(-x_ref)
-    dy_true = -np.exp(-x_ref)
-
-    # Animation
-    fig, ax = plt.subplots(figsize=(6, 4))
-    line_pred, = ax.plot([], [], "--", label="PINN")
-    line_true, = ax.plot(x_ref, y_true, "k", linewidth=2,
-                         label="exact: e^{-x}"
-                         )
-    line_dy_pred, = ax.plot([], [], label='Pred_')
-    line_dy_true, = ax.plot(x_ref, dy_true, label="True D")
-    ax.set_xlim(-2, 2)
-    ax.set_ylim(-8, 8)
-    ax.set_xlabel("x")
-    ax.set_ylabel("y(x)")
-    ax.legend()
-
-    def update(frame):
-        epoch, x, y_pred = snapshots[frame]
-        line_pred.set_data(x, y_pred)
-        ax.set_title(f"PINN solution, epoch {epoch}")
-        return line_pred,
-
-    ani = animation.FuncAnimation(
-        fig, update,
-        frames=len(snapshots), blit=True, repeat=False)
-    plt.tight_layout()
-    plt.show()
+    model = NeuralNetwork()
+    loaded = torch.load(netConfig().save_path)
+    model.load_state_dict(loaded["model_state_dict"])
+    model.eval()
+    plot_predict_true(model, 2)
