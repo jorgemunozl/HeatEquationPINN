@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 from config import netConfig, pinnConfig
-from utils import compute_residual, initial_condition, plot_init, plot_predict_true
+from utils import compute_residual, initial_condition
+from utils import plot_error_mape_fixed_t
 
 
 class NeuralNetwork(nn.Module):
@@ -33,17 +34,17 @@ def train_pinn():
     lambda_bc = pinnConfig().lambda_bc
 
     # Residual Collocation
-    x_col_res = torch.empty(num_collocation_res, 1).uniform_(0, 1)
-    t_col_res = torch.empty(num_collocation_res, 1).uniform_(0, 1)
+    x_col_res = torch.rand(num_collocation_res, 1)
+    t_col_res = torch.rand(num_collocation_res, 1)
 
     # Initial Condition Collocation
-    x_col_ic = torch.empty(num_collocation_ic, 1).uniform_(0, 1)
+    x_col_ic = torch.rand(num_collocation_ic, 1)
     t_col_ic = torch.zeros((num_collocation_ic, 1))
 
     # Boundary Condition Collocation
-    t_x_bc = torch.empty(num_collocation_bc, 1).uniform_(0, 1)
+    t_x_bc = torch.rand(num_collocation_bc, 1)
     x_bc = torch.zeros((num_collocation_bc, 1), requires_grad=True)
-    t_l_bc = torch.empty(num_collocation_bc, 1).uniform_(0, 1)
+    t_l_bc = torch.rand(num_collocation_bc, 1)
     l_bc = torch.ones((num_collocation_bc, 1), requires_grad=True)
 
     # Neumann
@@ -94,4 +95,4 @@ if __name__ == "__main__":
     loaded = torch.load(netConfig().save_path)
     model.load_state_dict(loaded["model_state_dict"])
     model.eval()
-    plot_predict_true(model, 2)
+    plot_error_mape_fixed_t(model, 0.3)

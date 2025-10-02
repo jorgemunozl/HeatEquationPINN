@@ -1,9 +1,0 @@
-hyper_parameters_pinn
-{
-    
-}
-
-hyper_parameters_pdf{
-    num_collocation_residual
-    num_collocation
-}

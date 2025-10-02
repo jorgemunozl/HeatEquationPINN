@@ -4,7 +4,7 @@ from typing import Annotated
 
 class netConfig(BaseModel):
     save_path: str = Field(
-        default="parameter_colab_tpu.pth",
+        default="parameters.pth",
         description="Parameter's path"
     )
     neuron_inputs: int = Field(
@@ -43,9 +43,9 @@ class plotConfig(BaseModel):
 
 
 class pinnConfig(BaseModel):
-    alpha: Annotated[int, {}] = Field(
+    alpha: float = Field(
         default=0.1,
-        description=""
+        description="Important for the PDE"
     )
 
     num_collocation_res: int = Field(
