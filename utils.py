@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from config import pinnConfig
 import os
+import matplotlib.animation as animation
 
 
 def fourier_series(n):
@@ -59,6 +60,7 @@ class plots():
     def __init__(self, x_sample=1000, t_sample=1000):
         self.x_sample = torch.linspace(0, 1, x_sample).unsqueeze(1)
         self.t_sample = np.linspace(0, 1, t_sample)
+        self.time_one = torch.ones((x_sample, 1))
         self.dir = "plots"
         os.makedirs(self.dir, exist_ok=True)
 
@@ -112,33 +114,60 @@ class plots():
         plt.plot(self.t_sample, error_t)
         plt.savefig(file_path, dpi=600)
 
-    def three_dimensional(self):
+    def three_dimensional(self): # For oct 4
         pass
 
-    def scalar(self):
+    def scalar(self): # For oct 5
         pass
+
+    def animation_mape(self, model, epochs=200):
+        directory = self.dir+"/animations"
+        os.makedirs(directory, exist_ok=True)
+        file_name = "animation_mape.mp4"
+        file_path = os.path.join(directory, file_name)
+
+        fig, ax = plt.subplots()
+        line, = ax.plot([], [], lw=2)
+
+        data = []
+        for t in self.t_sample:
+            y_true = heat_function(self.x_sample, t)
+
+            with torch.no_grad():
+                y_predict = model(self.x_sample, )
+            E = error(y_true, y_predict)
+
+            data.append(E.MAPE())
+
+        def update(frame):
+            y = data[frame]
+            line.set_data(self.x_sample, y)
+            return line,
+
+        animation_ = animation.FuncAnimation(
+            fig, update, frames=200
+        )
+        animation_.save(file_path, writer='ffmpeg')
 
     def error_mape_fixed_t(self, model, t: float):
+
         directory = self.dir+"/error"
         os.makedirs(directory, exist_ok=True)
         file_name = f"error_mape_fixed_{int(t*10)}.png"
         file_path = os.path.join(directory, file_name)
+        t_eval = self.time_one * t
+
         with torch.no_grad():
-            x_sample = torch.linspace(0, 1, pinnConfig().error_x_sample)
-            x_sample = x_sample.unsqueeze(1)
+            y_predict = model(self.x_sample, t_eval)
 
-            time_one = torch.ones((pinnConfig().error_x_sample, 1))
-            t_eval = time_one * t
+        y_true = heat_function(self.x_sample, t_eval)
 
-            y_predict = model(x_sample, t_eval)
-            y_true = heat_function(x_sample, t_eval)
+        E = error(y_true, y_predict)
+        error_mape_ = E.MAPE()
 
-            E = error(y_true, y_predict)
-            error_mape_ = E.MAPE()
-
-        plt.plot(x_sample.numpy(), error_mape_, label="MAPE Error")
-        plt.plot(x_sample.numpy(), y_true, label="True")
-        plt.plot(x_sample.numpy(), y_predict.numpy(), label="Predicted")
+        plt.plot(self.x_sample.numpy(), error_mape_, label="MAPE Error")
+        plt.plot(self.x_sample.numpy(), y_true, label="True")
+        plt.plot(self.x_sample.numpy(), y_predict.numpy(), label="Predicted")
         plt.title(f"Error MAPE for time {t}")
         plt.legend()
         plt.savefig(file_path, dpi=500)
@@ -150,13 +179,14 @@ class plots():
         file_name = f"error_mse_fixed_{int(t*10)}.png"
         file_path = os.path.join(directory, file_name)
 
+        t_eval = self.time_one * t
+        y_true = heat_function(self.x_sample, t)
+
         with torch.no_grad():
-            time_one = torch.ones((len(self.x_sample), 1))
-            t_eval = time_one * t
             y_predict = model(self.x_sample, t_eval)
-            y_true = heat_function(self.x_sample, t)
-            E = error(y_true, y_predict)
-            error_mse_ = E.MSE()
+
+        E = error(y_true, y_predict)
+        error_mse_ = E.MSE()
         plt.plot(self.x_sample.numpy(), error_mse_, label="MSE")
         plt.plot(self.x_sample.numpy(), y_true, label="True")
         plt.plot(self.x_sample.numpy(), y_predict.numpy(), label="Predicted")
