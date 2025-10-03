@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 class netConfig(BaseModel):
     save_path: str = Field(
-        default="parameters_snap.pth",
+        default="parameters.pth",
         description="Parameter's path"
     )
     neuron_inputs: int = Field(

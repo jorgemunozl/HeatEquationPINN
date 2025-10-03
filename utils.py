@@ -50,7 +50,7 @@ class error():
         self.y_predict = y_predict
 
     def MAPE(self):
-        return np.abs(self.y_true-self.y_predict)/np.abs(self.y_predict)
+        return np.abs(self.y_true-self.y_predict)/np.abs(self.y_true)
 
     def MSE(self):
         return (self.y_true-self.y_predict)**2
@@ -169,7 +169,8 @@ class plots():
 
         directory = self.dir+"/error"
         os.makedirs(directory, exist_ok=True)
-        file_name = f"error_mape_fixed_{int(t*10)}.png"
+        number = f"{round(t, 2)}"
+        file_name = f"error_mape_fixed_{number.replace(".", "")}.png"
         file_path = os.path.join(directory, file_name)
         t_eval = self.time_one * t
 
@@ -177,16 +178,17 @@ class plots():
             y_predict = model(self.x_sample, t_eval)
 
         y_true = heat_function(self.x_sample, t_eval)
-
         E = error(y_true, y_predict)
         error_mape_ = E.MAPE()
 
         plt.plot(self.x_sample.numpy(), error_mape_, label="MAPE Error")
-        plt.plot(self.x_sample.numpy(), y_true, label="True")
-        plt.plot(self.x_sample.numpy(), y_predict.numpy(), label="Predicted")
+        plt.plot(self.x_sample.numpy(), y_true, label="True",
+                 linewidth=1)
+        plt.plot(self.x_sample.numpy(), y_predict.numpy(),
+                 label="Predicted", linewidth=1)
         plt.title(f"Error MAPE for time {t}")
         plt.legend()
-        plt.savefig(file_path, dpi=500)
+        plt.savefig(file_path, dpi=600)
 
     def error_mse_fixed_t(self, model, t):
 
@@ -204,15 +206,15 @@ class plots():
         E = error(y_true, y_predict)
         error_mse_ = E.MSE()
         plt.plot(self.x_sample.numpy(), error_mse_, label="MSE")
-        plt.plot(self.x_sample.numpy(), y_true, label="True")
-        plt.plot(self.x_sample.numpy(), y_predict.numpy(), label="Predicted")
+        plt.plot(self.x_sample.numpy(), y_true, label="True", linewidth=1)
+        plt.plot(self.x_sample.numpy(), y_predict.numpy(),
+                 label="Predicted", linewidth=1)
         plt.legend()
-        plt.savefig(file_path, dpi=600)
+        plt.savefig(file_path, dpi=700)
 
     def animate_snapshot(self, model, snap, frame, flag):
         """Plot when using epochs vs error, training(phase),
         flag = True -> save animation, otherwise, save_data"""
-        file_name
 
         # Plot the true Red
         if flag:

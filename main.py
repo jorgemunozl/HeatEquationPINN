@@ -102,12 +102,12 @@ def train_pinn():
 
 
 if __name__ == "__main__":
-    """
+    
     model = NeuralNetwork()
     loaded = torch.load(netConfig().save_path)
     model.load_state_dict(loaded["model_state_dict"])
     model.eval()
     plotter = plots()
-    plotter.animation_mape(model)
-    """
-    model = train_pinn()
+    plotter.error_mape_fixed_t(model, 0.5)
+    
+    #model = train_pinn()
