@@ -57,7 +57,7 @@ class error():
 
 
 class plots():
-    def __init__(self, x_sample=1000, t_sample=1000):
+    def __init__(self, x_sample=1000, t_sample=100):
         self.x_sample = torch.linspace(0, 1, x_sample).unsqueeze(1)
         self.t_sample = np.linspace(0, 1, t_sample)
         self.time_one = torch.ones((x_sample, 1))
@@ -127,12 +127,18 @@ class plots():
         file_path = os.path.join(directory, file_name)
 
         fig, ax = plt.subplots()
-        line, = ax.plot([], [], lw=2)
+        line1, = ax.plot([], [], lw=2, label='MAPE')
+        line2, = ax.plot([], [], lw=2, label='True')
+        line3, = ax.plot([], [], lw=2, label='Predicted')
 
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1)
+        ax.legend()
 
-        data = []
+        data1 = []
+        data2 = []
+        data3 = []
+
         for t in self.t_sample:
             y_true = heat_function(self.x_sample, t)
 
@@ -140,15 +146,22 @@ class plots():
                 y_predict = model(self.x_sample, self.time_one*t)
             E = error(y_true, y_predict)
 
-            data.append(E.MAPE())
+            data1.append(E.MAPE())
+            data2.append(y_true)
+            data3.append(y_predict)
 
         def update(frame):
-            y = data[frame]
-            line.set_data(self.x_sample, y)
-            return line,
+            y1 = data1[frame]
+            y2 = data2[frame]
+            y3 = data3[frame]
+
+            line1.set_data(self.x_sample, y1)
+            line2.set_data(self.x_sample, y2)
+            line3.set_data(self.x_sample, y3)
+            return line1, line2, line3,
 
         animation_ = animation.FuncAnimation(
-            fig, update, frames=200
+            fig, update, frames=100
         )
         animation_.save(file_path, writer='ffmpeg')
 
@@ -195,3 +208,21 @@ class plots():
         plt.plot(self.x_sample.numpy(), y_predict.numpy(), label="Predicted")
         plt.legend()
         plt.savefig(file_path, dpi=600)
+
+    def animate_snapshot(self, model, snap, frame, flag):
+        """Plot when using epochs vs error, training(phase),
+        flag = True -> save animation, otherwise, save_data"""
+        file_name
+
+        # Plot the true Red
+        if flag:
+            # Plot the static true.
+            # Take the tensor and somehow it plot it and plot it directly
+            animation.save()
+        else:
+            tensor = []
+            for t in self.t_sample:
+                with torch.no_grad():
+                    y_predict = model(self.x_sample, self.time_one*t)
+            tensor.append(y_predict)
+            snap[frame] = tensor

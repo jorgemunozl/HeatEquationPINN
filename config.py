@@ -1,10 +1,9 @@
 from pydantic import BaseModel, Field
-from typing import Annotated
 
 
 class netConfig(BaseModel):
     save_path: str = Field(
-        default="parameters.pth",
+        default="parameters_snap.pth",
         description="Parameter's path"
     )
     neuron_inputs: int = Field(
@@ -29,16 +28,28 @@ class netConfig(BaseModel):
         default=1e-3,
         description='Learning rate'
     )
-    step_snapshot: int = Field(
-        default=10,
-        description='Step'
-    )
 
 
 class plotConfig(BaseModel):
     sample: int = Field(
         default=100,
         description='Number o'
+    )
+    snapshot_step: int = Field(
+        default=10,
+        description=""
+    )
+    snap_x: int = Field(
+        default=1000,
+        description=""
+    )
+    snap_t: int = Field(
+        default=100,
+        description=""
+    )
+    frames_snap: int = Field(
+        default=100,
+        description=""
     )
 
 

@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from config import netConfig, pinnConfig
+from config import netConfig, pinnConfig, plotConfig
 from utils import compute_residual, initial_condition
 from utils import plots
 
@@ -51,6 +51,12 @@ def train_pinn():
     ux_0_bc = torch.zeros((num_collocation_bc, 1))
     ux_1_bc = torch.zeros((num_collocation_bc, 1))
 
+    # Snapshot values
+
+    snapshots = torch.zeros((plotConfig().snap_x,
+                             plotConfig().snap_t,
+                             plotConfig().frames_snap))
+
     for _ in range(netConfig().epochs):
         optimizer.zero_grad()
 
@@ -81,19 +87,27 @@ def train_pinn():
         loss = lambda_residual*loss_residual+lambda_ic*loss_ic+lambda_bc*loss_b
         loss.backward()
         optimizer.step()
-        if _ % 200 == 0:
-            print(loss)
+        plotter = plots()
+        if _ % plotConfig().snapshot_step == 0:
+            if _ == netConfig().epochs-1:
+                plotter.animate_snapshot(model, snapshots, _, True)
+            else:
+                plotter.animate_snapshot(model, snapshots, _, False)
+
     save_path = netConfig().save_path
     torch.save(
             {'model_state_dict': model.state_dict()}, save_path
         )
-    return model
+    return model, snapshots
 
 
 if __name__ == "__main__":
+    """
     model = NeuralNetwork()
     loaded = torch.load(netConfig().save_path)
     model.load_state_dict(loaded["model_state_dict"])
     model.eval()
     plotter = plots()
     plotter.animation_mape(model)
+    """
+    model = train_pinn()
