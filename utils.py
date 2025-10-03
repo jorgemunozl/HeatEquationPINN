@@ -114,10 +114,10 @@ class plots():
         plt.plot(self.t_sample, error_t)
         plt.savefig(file_path, dpi=600)
 
-    def three_dimensional(self): # For oct 4
+    def three_dimensional(self):  # For oct 4
         pass
 
-    def scalar(self): # For oct 5
+    def scalar(self):  # For oct 5
         pass
 
     def animation_mape(self, model, epochs=200):
@@ -129,12 +129,15 @@ class plots():
         fig, ax = plt.subplots()
         line, = ax.plot([], [], lw=2)
 
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+
         data = []
         for t in self.t_sample:
             y_true = heat_function(self.x_sample, t)
 
             with torch.no_grad():
-                y_predict = model(self.x_sample, )
+                y_predict = model(self.x_sample, self.time_one*t)
             E = error(y_true, y_predict)
 
             data.append(E.MAPE())

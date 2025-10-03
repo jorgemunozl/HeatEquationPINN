@@ -96,4 +96,4 @@ if __name__ == "__main__":
     model.load_state_dict(loaded["model_state_dict"])
     model.eval()
     plotter = plots()
-    plotter.error_mape_fixed_t(model, 0.0)
+    plotter.animation_mape(model)
