@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from config import netConfig, pinnConfig
 from utils import compute_residual, initial_condition
-from utils import plot_error_mape_fixed_t
+from utils import plots
 
 
 class NeuralNetwork(nn.Module):
@@ -95,4 +95,5 @@ if __name__ == "__main__":
     loaded = torch.load(netConfig().save_path)
     model.load_state_dict(loaded["model_state_dict"])
     model.eval()
-    plot_error_mape_fixed_t(model, 0.3)
+    plotter = plots()
+    plotter.error_mape_fixed_t(model, 0.0)
