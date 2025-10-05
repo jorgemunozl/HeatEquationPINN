@@ -29,8 +29,8 @@ def train_pinn():
     num_collocation_res = pinnConfig().num_collocation_res
     num_collocation_ic = pinnConfig().num_collocation_ic
     num_collocation_bc = pinnConfig().num_collocation_bc
-    lambda_residual = pinnConfig().num_collocation_bc
-    lambda_ic = pinnConfig().num_collocation_bc
+    lambda_residual = pinnConfig().lambda_residual
+    lambda_ic = pinnConfig().lambda_ic
     lambda_bc = pinnConfig().lambda_bc
 
     # Residual Collocation
@@ -87,12 +87,20 @@ def train_pinn():
         loss = lambda_residual*loss_residual+lambda_ic*loss_ic+lambda_bc*loss_b
         loss.backward()
         optimizer.step()
+        if _ % 100 == 0:
+            print("Loss Residual: ", loss_residual)
+            print("Loss Ic: ", loss_ic)
+            print("Loss Bc: ", loss_b)
+            print("General Loss: ", loss)
+
+        """
         plotter = plots()
         if _ % plotConfig().snapshot_step == 0:
             if _ == netConfig().epochs-1:
                 plotter.animate_snapshot(model, snapshots, _, True)
             else:
                 plotter.animate_snapshot(model, snapshots, _, False)
+        """
 
     save_path = netConfig().save_path
     torch.save(
@@ -101,13 +109,17 @@ def train_pinn():
     return model, snapshots
 
 
+def main(flag: bool):
+    if flag:
+        model = NeuralNetwork()
+        loaded = torch.load(netConfig().save_path)
+        model.load_state_dict(loaded["model_state_dict"])
+        model.eval()
+        plotter = plots()
+        plotter.init_con()
+    else:
+        model = train_pinn()
+
+
 if __name__ == "__main__":
-    
-    model = NeuralNetwork()
-    loaded = torch.load(netConfig().save_path)
-    model.load_state_dict(loaded["model_state_dict"])
-    model.eval()
-    plotter = plots()
-    plotter.error_mape_fixed_t(model, 0.5)
-    
-    #model = train_pinn()
+    main(False)

@@ -28,7 +28,7 @@ def compute_residual(model, x, t):
         retain_graph=True
     )[0]
 
-    return d_t - pinnConfig().alpha*d_xx
+    return d_t - pinnConfig().alpha * d_xx
 
 
 def initial_condition(x):
@@ -36,7 +36,7 @@ def initial_condition(x):
 
 
 def heat_function(x, t):
-    a_0 = 1/3
+    a_0 = 1/3 + 3
     sum = 0
     for i in range(1, 20):
         exponential = np.exp(-1*pinnConfig().alpha*(2*i*np.pi)**2*t)
@@ -57,7 +57,7 @@ class error():
 
 
 class plots():
-    def __init__(self, x_sample=1000, t_sample=100):
+    def __init__(self, x_sample=1000, t_sample=10):
         self.x_sample = torch.linspace(0, 1, x_sample).unsqueeze(1)
         self.t_sample = np.linspace(0, 1, t_sample)
         self.time_one = torch.ones((x_sample, 1))
@@ -87,6 +87,7 @@ class plots():
                 plt.plot(self.x_sample, y_, color='red', linewidth=1)
         plt.title("Comparation")
         plt.legend()
+        plt.show()
         plt.savefig(file_path, dpi=600)
 
     def time_vs_error(self, model):
@@ -114,10 +115,36 @@ class plots():
         plt.plot(self.t_sample, error_t)
         plt.savefig(file_path, dpi=600)
 
-    def three_dimensional(self):  # For oct 4
-        pass
+    def three_dimensional(self, model):  # For oct 4
+        fig, ax = plt.subplots(figsize=(8, 4), )
 
-    def scalar(self):  # For oct 5
+        t_sample = torch.linspace(0, 1, len(self.x_sample))
+        X, T = torch.meshgrid(self.x_sample, t_sample)
+
+        # make flattened torch inputs (N,1)
+        X_flat = X.unsqueeze(1)
+        T_flat = T.unsqueeze(1)
+
+        model.eval()
+        with torch.no_grad():
+            Y_flat = model(X_flat, T_flat).cpu().numpy().ravel()
+
+        Y = Y_flat.reshape(X.shape)
+
+        ax.clear()
+        
+        ax.set_xlabel('x')
+        ax.set_ylabel('t')
+        ax.set_zlabel('u(x,t)')
+        ax.set_title(rf'PINN solution, $\alpha={alpha}$')
+        fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
+
+        if save_path:
+            plt.savefig(save_path, dpi=200, bbox_inches='tight')
+        else:
+            plt.show()
+
+    def scalar(self):  # For oct 5, use colors to plot.
         pass
 
     def animation_mape(self, model, epochs=200):
@@ -170,7 +197,7 @@ class plots():
         directory = self.dir+"/error"
         os.makedirs(directory, exist_ok=True)
         number = f"{round(t, 2)}"
-        file_name = f"error_mape_fixed_{number.replace(".", "")}.png"
+        file_name = f"error_mape_s_fixed_{number.replace(".", "")}.png"
         file_path = os.path.join(directory, file_name)
         t_eval = self.time_one * t
 
@@ -228,3 +255,11 @@ class plots():
                     y_predict = model(self.x_sample, self.time_one*t)
             tensor.append(y_predict)
             snap[frame] = tensor
+
+    def init_con(self):
+        y = initial_condition(self.x_sample)
+        plt.plot(self.x_sample, y, color='red')
+        for i in self.t_sample:
+            y_ = heat_function(self.x_sample, self.time_one * i)
+            plt.plot(self.x_sample, y_)
+        plt.show()
