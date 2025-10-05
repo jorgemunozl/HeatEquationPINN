@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 class netConfig(BaseModel):
     save_path: str = Field(
-        default="parameters_new_ic.pth",
+        default="parameters.pth",
         description="Parameter's path"
     )
     neuron_inputs: int = Field(
@@ -11,11 +11,11 @@ class netConfig(BaseModel):
         description='Number of neurons'
     )
     neuron_hidden: int = Field(
-        default=512,
+        default=100,
         description='Number of neurons'
     )
     hidden_layers_numbers: int = Field(
-        default=2,
+        default=4,
     )
     neuron_outputs: int = Field(
         default=1
@@ -60,27 +60,27 @@ class pinnConfig(BaseModel):
     )
 
     num_collocation_res: int = Field(
-        default=500,
+        default=1000,
         description=""
     )
     num_collocation_ic: int = Field(
-        default=100,
+        default=500,
         description=''
     )
     num_collocation_bc: int = Field(
-        default=200,
+        default=600,
         description=''
     )
     lambda_residual: float = Field(
-        default=2.0,
+        default=10.0,
         description=''
     )
     lambda_ic: float = Field(
-        default=1.0,
+        default=6.0,
         description=''
     )
     lambda_bc: float = Field(
-        default=1.5,
+        default=5.0,
         description=''
     )
     error_x_sample: int = Field(

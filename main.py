@@ -5,16 +5,19 @@ from utils import compute_residual, initial_condition
 from utils import plots
 
 
+torch.manual_seed(123)
+
+
 class NeuralNetwork(nn.Module):
     def __init__(self):
         super().__init__()
         layer = [nn.Linear(netConfig().neuron_inputs,
-                           netConfig().neuron_hidden), nn.Tanh()]
+                           netConfig().neuron_hidden), nn.GELU()]
         for i in range(netConfig().hidden_layers_numbers):
             layer += [nn.Linear(netConfig().neuron_hidden,
-                                netConfig().neuron_hidden), nn.Tanh()]
+                                netConfig().neuron_hidden), nn.GELU()]
         layer += [nn.Linear(netConfig().neuron_hidden,
-                            netConfig().neuron_outputs), nn.Tanh()]
+                            netConfig().neuron_outputs), nn.GELU()]
         self.net = nn.Sequential(*layer)
 
     def forward(self, x, t):
@@ -91,7 +94,7 @@ def train_pinn():
             print("Loss Residual: ", loss_residual)
             print("Loss Ic: ", loss_ic)
             print("Loss Bc: ", loss_b)
-            print("General Loss: ", loss)
+            print("General Loss: ", loss, _)
 
         """
         plotter = plots()
@@ -102,9 +105,8 @@ def train_pinn():
                 plotter.animate_snapshot(model, snapshots, _, False)
         """
 
-    save_path = netConfig().save_path
     torch.save(
-            {'model_state_dict': model.state_dict()}, save_path
+            {'model_state_dict': model.state_dict()}, netConfig().save_path
         )
     return model, snapshots
 
@@ -116,10 +118,10 @@ def main(flag: bool):
         model.load_state_dict(loaded["model_state_dict"])
         model.eval()
         plotter = plots()
-        plotter.init_con()
+        plotter.heat_comparation(model)
     else:
         model = train_pinn()
 
 
 if __name__ == "__main__":
-    main(False)
+    main(True)

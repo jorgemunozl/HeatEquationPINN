@@ -32,13 +32,13 @@ def compute_residual(model, x, t):
 
 
 def initial_condition(x):
-    return 10*(x-x**2)**2
+    return 10*(x-x**2)**2 + 3
 
 
 def heat_function(x, t):
     a_0 = 1/3 + 3
     sum = 0
-    for i in range(1, 20):
+    for i in range(1, 40):
         exponential = np.exp(-1*pinnConfig().alpha*(2*i*np.pi)**2*t)
         sum += fourier_series(2*i)*np.cos(np.pi*2*i*x)*exponential
     return a_0 + sum
@@ -68,8 +68,7 @@ class plots():
 
         directory = self.dir+"/analytic"
         os.makedirs(directory, exist_ok=True)
-        file_name = "comparation.png"
-        os.makedirs("plots/time_fixed", exist_ok=True)
+        file_name = "first.png"
         file_path = os.path.join(directory, file_name)
 
         with torch.no_grad():
@@ -87,7 +86,6 @@ class plots():
                 plt.plot(self.x_sample, y_, color='red', linewidth=1)
         plt.title("Comparation")
         plt.legend()
-        plt.show()
         plt.savefig(file_path, dpi=600)
 
     def time_vs_error(self, model):
