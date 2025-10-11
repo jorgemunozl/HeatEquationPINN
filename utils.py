@@ -57,7 +57,7 @@ class error():
 
 
 class plots():
-    def __init__(self, x_sample=1000, t_sample=10):
+    def __init__(self, x_sample=1000, t_sample=1000):
         self.x_sample = torch.linspace(0, 1, x_sample).unsqueeze(1)
         self.t_sample = np.linspace(0, 1, t_sample)
         self.time_one = torch.ones((x_sample, 1))
@@ -113,37 +113,36 @@ class plots():
         plt.plot(self.t_sample, error_t)
         plt.savefig(file_path, dpi=600)
 
-    def three_dimensional(self, model):  # For oct 4
+    def three_dimensional(self):  # For oct 4
         fig, ax = plt.subplots(figsize=(8, 4), )
+        X, Y = np.meshgrid(self.x_sample.numpy(), self.t_sample)
 
-        t_sample = torch.linspace(0, 1, len(self.x_sample))
-        X, T = torch.meshgrid(self.x_sample, t_sample)
+        T = heat_function(X, Y)
 
-        # make flattened torch inputs (N,1)
-        X_flat = X.unsqueeze(1)
-        T_flat = T.unsqueeze(1)
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
 
-        model.eval()
-        with torch.no_grad():
-            Y_flat = model(X_flat, T_flat).cpu().numpy().ravel()
+        surf = ax.plot_surface(X, Y, T, cmap='plasma')
 
-        Y = Y_flat.reshape(X.shape)
-
-        ax.clear()
-        
+        fig.colorbar(surf, ax=ax, shrink=0.5,
+                     aspect=10, label='Temperature (°C)')
         ax.set_xlabel('x')
-        ax.set_ylabel('t')
-        ax.set_zlabel('u(x,t)')
-        ax.set_title(rf'PINN solution, $\alpha={alpha}$')
-        fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
+        ax.set_ylabel('Time')
+        ax.set_zlabel('Temperature (°C)')
+        ax.set_title('Heat Equation')
+        plt.savefig("3d", dpi=600)
 
-        if save_path:
-            plt.savefig(save_path, dpi=200, bbox_inches='tight')
-        else:
-            plt.show()
-
-    def scalar(self):  # For oct 5, use colors to plot.
-        pass
+    def scalar(self):
+        self.x_sample = self.x_sample.squeeze(1)
+        X, Y = np.meshgrid(self.x_sample.numpy(), self.t_sample)
+        T = heat_function(X, Y)
+        plt.figure()
+        plt.imshow(T, origin='lower', cmap='plasma', aspect='auto')
+        plt.colorbar(label='Temperature')
+        plt.xlabel('x')
+        plt.ylabel('Time')
+        plt.title('Heat equation one dimension')
+        plt.savefig("heat")
 
     def animation_mape(self, model, epochs=200):
         directory = self.dir+"/animations"
@@ -238,14 +237,16 @@ class plots():
         plt.savefig(file_path, dpi=700)
 
     def animate_snapshot(self, model, snap, frame, flag):
-        """Plot when using epochs vs error, training(phase),
+        """Plot when using epochs and difference, for that
+        matter you use three dimensional tensors, training(phase),
         flag = True -> save animation, otherwise, save_data"""
 
         # Plot the true Red
         if flag:
             # Plot the static true.
             # Take the tensor and somehow it plot it and plot it directly
-            animation.save()
+            # animation.save()
+            pass
         else:
             tensor = []
             for t in self.t_sample:
