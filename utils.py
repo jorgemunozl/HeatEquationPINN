@@ -31,6 +31,25 @@ def compute_residual(model, x, t):
     return d_t - pinnConfig().alpha * d_xx
 
 
+def finite_difference_method(alpha, time_steps):
+    L = 1.0
+    nx = 500
+    dx = L / (nx - 1)
+    dt = 0.4 * dx**2 / alpha   # time step (stability condition)
+    x = np.linspace(0, L, nx)
+
+    u = initial_condition(x)
+
+    for n in range(time_steps):
+        u_new = u.copy()
+        # interior points
+        u_new[1:-1] = u[1:-1] + alpha * dt / dx**2 * (u[2:] - 2*u[1:-1] + u[:-2])
+        # Neumann boundary conditions (du/dx = 0)
+        u_new[0] = u_new[1]      # left boundary
+        u_new[-1] = u_new[-2]     # right boundary
+        u = u_new
+    return x, u
+
 def initial_condition(x):
     return 10*(x-x**2)**2 + 3
 
