@@ -124,31 +124,14 @@ whole object and can break across PyTorch versions or refactors.
 - `src/` — project source (e.g. `config.py`, `utils.py`)
 - `requirements.txt` — minimal Python dependencies
 
-## Reproducibility and tips
+## Future Improvements
 
-- Save a small `config` dictionary with each checkpoint (hyperparameters,
-	architecture). This makes experiments reproducible and checkpoints self-
-	descriptive.
-- Use `map_location=torch.device('cpu')` when loading GPU-saved checkpoints on
-	a CPU-only machine.
-- Fix random seeds in scripts when you want deterministic runs.
+- [ ] Compare the PINN against traditional methods (Finite Difference Method)
+- [ ] Prove the model for another more spicy initial and boundary conditions.
+- [ ] Evaluate the efficency of the model when increasing the dimensions.
+- [ ] Visualize the model training, using animations.
+- [ ] Use better methods of initialization for the collocation points. (Latin Hypercube)
 
-## Next steps (suggestions)
+## Acknowledge
 
-- Add CLI flags to `main.py` (`argparse`) to control training vs. inference,
-	checkpoint paths and training hyperparameters.
-- Add a `requirements-lock.txt` (pinned versions) or `environment.yml` for
-	reproducible environments.
-- Add unit tests for core utilities (residual computation, analytic solver
-	comparisons) so changes are safer to refactor.
-
----
-
-If you want, I can now:
-- Add a `requirements-lock.txt` with exact working versions.
-- Wire `main.py` to accept `--checkpoint` and `--eval-only` CLI args.
-- Provide a short `example_train_and_eval.py` showing train -> save -> load ->
-	infer using the exact `NeuralNetwork` class in this repo.
-
-Tell me which of these you want next and I'll implement it.
-
+I say thanks to the profesor Alejandro Paredes for his support while the development of this project.

@@ -97,15 +97,6 @@ def train_pinn():
             print("Loss Bc: ", loss_b)
             print("General Loss: ", loss, _)
 
-        """
-        plotter = plots()
-        if _ % plotConfig().snapshot_step == 0:
-            if _ == netConfig().epochs-1:
-                plotter.animate_snapshot(model, snapshots, _, True)
-            else:
-                plotter.animate_snapshot(model, snapshots, _, False)
-        """
-
     torch.save(
             {'model_state_dict': model.state_dict()}, netConfig().save_path
         )
