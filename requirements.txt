@@ -1,0 +1,11 @@
+# Minimal Python dependencies for the PINNHeat project
+# Note: PyTorch has platform-specific wheels. If you have a CUDA GPU,
+# install the appropriate torch wheel from https://pytorch.org before
+# or instead of `pip install -r requirements.txt`.
+
+torch>=2.0.0
+torchvision>=0.15.0
+numpy>=1.24
+matplotlib>=3.6
+scipy>=1.10
+tqdm>=4.65
