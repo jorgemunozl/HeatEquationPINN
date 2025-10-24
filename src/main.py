@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 from config import netConfig, pinnConfig, plotConfig
 from utils import compute_residual, initial_condition
-from utils import plots
+from utils import plots, finite_difference_method
+import matplotlib.pyplot as plt
 
 
 torch.manual_seed(123)
@@ -124,4 +125,10 @@ def main(flag: bool):
 
 
 if __name__ == "__main__":
-    main(True)
+    time_steps = 1000
+    alpha = 0.1
+    for i in range(0, time_steps, 100):
+        result = finite_difference_method(alpha, i)
+        plt.plot(result[0], result[1], label=f"{i}")
+    plt.legend()
+    plt.savefig("fdm", dpi=600)
