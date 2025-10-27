@@ -4,7 +4,7 @@
 This repository contains code, examples and small utilities to train and
 evaluate Physics-Informed Neural Networks (PINNs) that solve the one-
 dimensional heat equation. The project is exploratory and includes training
-scripts, analytic reference solutions, plotting utilities, and a few
+scripts, analytic reference solutions, plotting utilities, and a few $\frac{1}{2}$
 experiment checkpoints.
 
 This README gives a concise guide to the repository, how to install the
