@@ -96,6 +96,7 @@ torch.save({
 }, 'parameters/checkpoint.pth')
 ```
 
+Add doc
 Load safely for inference:
 
 ```python
