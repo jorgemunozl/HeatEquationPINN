@@ -1,0 +1,12 @@
+[project]
+name = "heatequationpinn"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "logging>=0.4.9.6",
+    "matplotlib>=3.10.8",
+    "numpy>=2.4.1",
+    "pydantic>=2.12.5",
+]

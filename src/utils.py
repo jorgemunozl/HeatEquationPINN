@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from config import pinnConfig
+from config import PINN
 import os
 import matplotlib.animation as animation
 
@@ -28,7 +28,7 @@ def compute_residual(model, x, t):
         retain_graph=True
     )[0]
 
-    return d_t - pinnConfig().alpha * d_xx
+    return d_t - PINN().alpha * d_xx
 
 
 def finite_difference_method(alpha, time_steps):
@@ -58,7 +58,7 @@ def heat_function(x, t):
     a_0 = 1/3 + 3
     sum = 0
     for i in range(1, 40):
-        exponential = np.exp(-1*pinnConfig().alpha*(2*i*np.pi)**2*t)
+        exponential = np.exp(-1*PINN().alpha*(2*i*np.pi)**2*t)
         sum += fourier_series(2*i)*np.cos(np.pi*2*i*x)*exponential
     return a_0 + sum
 

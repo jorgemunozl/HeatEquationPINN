@@ -1,24 +1,31 @@
+"""
+Implementation of a PINN to solve the two dimensional heat equation.
+Configurations are stored in the config.py file.
+"""
+import logging
 import torch
 import torch.nn as nn
-from config import netConfig, pinnConfig, plotConfig
+from config import Network, PINN, Plot
 from utils import compute_residual, initial_condition
-from utils import plots, finite_difference_method
-import matplotlib.pyplot as plt
+from utils import plots
 
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 torch.manual_seed(123)
 
 
 class NeuralNetwork(nn.Module):
     def __init__(self):
         super().__init__()
-        layer = [nn.Linear(netConfig().neuron_inputs,
-                           netConfig().neuron_hidden), nn.GELU()]
-        for i in range(netConfig().hidden_layers_numbers):
-            layer += [nn.Linear(netConfig().neuron_hidden,
-                                netConfig().neuron_hidden), nn.GELU()]
-        layer += [nn.Linear(netConfig().neuron_hidden,
-                            netConfig().neuron_outputs), nn.GELU()]
+        layer = [nn.Linear(Network().neuron_inputs,
+                           Network().neuron_hidden), nn.GELU()]
+        for i in range(Network().hidden_layers_numbers):
+            layer += [nn.Linear(Network().neuron_hidden,
+                                Network().neuron_hidden), nn.GELU()]
+        layer += [nn.Linear(Network().neuron_hidden,
+                            Network().neuron_outputs), nn.GELU()]
         self.net = nn.Sequential(*layer)
 
     def forward(self, x, t):
@@ -27,43 +34,44 @@ class NeuralNetwork(nn.Module):
 
 
 def train_pinn():
-
     model = NeuralNetwork()
-    optimizer = torch.optim.Adam(model.parameters(), lr=netConfig().lr)
-    num_collocation_res = pinnConfig().num_collocation_res
-    num_collocation_ic = pinnConfig().num_collocation_ic
-    num_collocation_bc = pinnConfig().num_collocation_bc
-    lambda_residual = pinnConfig().lambda_residual
-    lambda_ic = pinnConfig().lambda_ic
-    lambda_bc = pinnConfig().lambda_bc
+    optimizer = torch.optim.Adam(model.parameters(), lr=Network().lr)
+
+    collocation_residual = PINN.num_collocation_res
+    collocation_ic = PINN.num_collocation_ic
+    collocation_bc = PINN.num_collocation_bc
+    lambda_residual = PINN.lambda_residual
+    lambda_ic = PINN.lambda_ic
+    lambda_bc = PINN.lambda_bc
 
     # Residual Collocation
-    x_col_res = torch.rand(num_collocation_res, 1)
-    t_col_res = torch.rand(num_collocation_res, 1)
+    x_col_res = torch.rand(collocation_residual, 1)
+    t_col_res = torch.rand(collocation_residual, 1)
 
     # Initial Condition Collocation
-    x_col_ic = torch.rand(num_collocation_ic, 1)
-    t_col_ic = torch.zeros((num_collocation_ic, 1))
+    x_col_ic = torch.rand(collocation_ic, 1)
+    t_col_ic = torch.zeros((collocation_ic, 1))
 
     # Boundary Condition Collocation
-    t_x_bc = torch.rand(num_collocation_bc, 1)
-    x_bc = torch.zeros((num_collocation_bc, 1), requires_grad=True)
-    t_l_bc = torch.rand(num_collocation_bc, 1)
-    l_bc = torch.ones((num_collocation_bc, 1), requires_grad=True)
+    t_x_bc = torch.rand(collocation_bc, 1)
+    x_bc = torch.zeros((collocation_bc, 1), requires_grad=True)
+    t_l_bc = torch.rand(collocation_bc, 1)
+    l_bc = torch.ones((collocation_bc, 1), requires_grad=True)
 
     # Neumann
-    ux_0_bc = torch.zeros((num_collocation_bc, 1))
-    ux_1_bc = torch.zeros((num_collocation_bc, 1))
+    ux_0_bc = torch.zeros((collocation_bc, 1))
+    ux_1_bc = torch.zeros((collocation_bc, 1))
 
     # Snapshot values
+    snapshots = torch.zeros((Plot().snap_x,
+                             Plot().snap_t,
+                             Plot().frames_snap))
 
-    snapshots = torch.zeros((plotConfig().snap_x,
-                             plotConfig().snap_t,
-                             plotConfig().frames_snap))
-
-    for _ in range(netConfig().epochs):
+    logger.info(f"Training PINN for {Network().epochs} epochs")
+    for _ in range(Network().epochs):
         optimizer.zero_grad()
-
+        if _ % 100 == 0:
+            logger.info(f"Epoch {_} of {Network().epochs}")
         # Residual
         residual = compute_residual(model, x_col_res, t_col_res)
         loss_residual = torch.mean(residual**2)
@@ -91,22 +99,18 @@ def train_pinn():
         loss = lambda_residual*loss_residual+lambda_ic*loss_ic+lambda_bc*loss_b
         loss.backward()
         optimizer.step()
-        if _ % 100 == 0:
-            print("Loss Residual: ", loss_residual)
-            print("Loss Ic: ", loss_ic)
-            print("Loss Bc: ", loss_b)
-            print("General Loss: ", loss, _)
 
     torch.save(
-            {'model_state_dict': model.state_dict()}, netConfig().save_path
+            {'model_state_dict': model.state_dict()}, Network().save_path
         )
+    logger.info(f"PINN trained for {Network().epochs} epochs")
     return model, snapshots
 
 
-def main(flag: bool):
+def main(flag: bool = False):
     if flag:
         model = NeuralNetwork()
-        loaded = torch.load(netConfig().save_path)
+        loaded = torch.load(Network().save_path)
         model.load_state_dict(loaded["model_state_dict"])
         model.eval()
         plotter = plots()
@@ -116,10 +120,4 @@ def main(flag: bool):
 
 
 if __name__ == "__main__":
-    time_steps = 1000
-    alpha = 0.1
-    for i in range(0, time_steps, 100):
-        result = finite_difference_method(alpha, i)
-        plt.plot(result[0], result[1], label=f"{i}")
-    plt.legend()
-    plt.savefig("fdm", dpi=600)
+    main()
