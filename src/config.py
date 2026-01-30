@@ -1,93 +1,49 @@
-from pydantic import BaseModel, Field
+from dataclasses import dataclass
+import os
 
 
-class netConfig(BaseModel):
-    save_path: str = Field(
-        default="parameters.pth",
-        description="Parameter's path"
-    )
-    neuron_inputs: int = Field(
-        default=2,
-        description='Number of neurons'
-    )
-    neuron_hidden: int = Field(
-        default=100,
-        description='Number of neurons'
-    )
-    hidden_layers_numbers: int = Field(
-        default=4,
-    )
-    neuron_outputs: int = Field(
-        default=1
-    )
-    epochs: int = Field(
-        default=7000,
-        description='Number of times that the parameter actualize'
-    )
-    lr: float = Field(
-        default=1e-3,
-        description='Learning rate'
-    )
+@dataclass
+class Network:
+    # Network configuration
+    neuron_inputs: int = 2
+    neuron_hidden: int = 100
+    hidden_layers_numbers: int = 4
+    neuron_outputs: int = 1
+
+    # Training configuration
+    epochs: int = 7000
+    lr: float = 1e-3
+
+    # Saving configuration
+    save_dir: str = "parameters"
+    save_name: str = "parameters.pth"
+    save_path: str = os.path.join(save_dir, save_name)
 
 
-class plotConfig(BaseModel):
-    sample: int = Field(
-        default=100,
-        description='Number o'
-    )
-    snapshot_step: int = Field(
-        default=10,
-        description=""
-    )
-    snap_x: int = Field(
-        default=1000,
-        description=""
-    )
-    snap_t: int = Field(
-        default=100,
-        description=""
-    )
-    frames_snap: int = Field(
-        default=100,
-        description=""
-    )
+@dataclass
+class Plot:
+    sample: int = 100
+    snapshot_step: int = 10
+    snap_x: int = 1000
+    snap_t: int = 100
+    frames_snap: int = 100
 
 
-class pinnConfig(BaseModel):
-    alpha: float = Field(
-        default=0.1,
-        description="Important for the PDE"
-    )
+@dataclass
+class PINN:
+    # Heat equation alpha parameter
+    alpha: float = 0.1
 
-    num_collocation_res: int = Field(
-        default=1000,
-        description=""
-    )
-    num_collocation_ic: int = Field(
-        default=500,
-        description=''
-    )
-    num_collocation_bc: int = Field(
-        default=600,
-        description=''
-    )
-    lambda_residual: float = Field(
-        default=10.0,
-        description=''
-    )
-    lambda_ic: float = Field(
-        default=6.0,
-        description=''
-    )
-    lambda_bc: float = Field(
-        default=5.0,
-        description=''
-    )
-    error_x_sample: int = Field(
-        default=1000,
-        description=''
-    )
-    error_t_sample: int = Field(
-        default=100,
-        description=''
-    )
+    # Collocation points configuration
+    num_collocation_res: int = 1000
+    num_collocation_ic: int = 500
+    num_collocation_bc: int = 600
+
+    # Lambda weights for the loss function
+    lambda_residual: float = 10.0
+    lambda_ic: float = 6.0
+    lambda_bc: float = 5.0
+
+    # Error configuration
+    error_x_sample: int = 1000
+    error_t_sample: int = 100
