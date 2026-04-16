@@ -1,6 +1,9 @@
 """
 Implementation of a PINN to solve the two dimensional heat equation.
 Configurations are stored in the config.py file.
+
+Of course that here you have to change your initial condition, boundary conditions, etc.
+And the collocation points, etc.
 """
 import logging
 import torch

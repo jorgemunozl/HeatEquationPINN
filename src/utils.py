@@ -5,6 +5,15 @@ from config import PINN
 import os
 import matplotlib.animation as animation
 
+def initial_condition_2d(x,y):
+    """Initial condition for the two dimensional heat equation."""
+    return np.sin(np.pi*x)*np.sin(np.pi*y)
+
+
+def initial_condition_1d(x):
+    """Initial condition for the one dimensional heat equation."""
+    return 10*(x-x**2)**2 + 3
+
 
 def fourier_series(n):
     # n even
@@ -49,9 +58,6 @@ def finite_difference_method(alpha, time_steps):
         u_new[-1] = u_new[-2]     # right boundary
         u = u_new
     return x, u
-
-def initial_condition(x):
-    return 10*(x-x**2)**2 + 3
 
 
 def heat_function(x, t):
